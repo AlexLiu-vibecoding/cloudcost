@@ -201,6 +201,38 @@ def dashboard(ctx: click.Context, host: str, port: int, debug: bool) -> None:
         click.echo("Dashboard requires: pip install cloudcost[dashboard]")
 
 
+# ── Anomaly Detection ──────────────────────────────────────────────
+
+
+@main.command()
+@click.option("--monthly-cost", "-c", type=float, required=True,
+              help="Total monthly cloud spend to analyze")
+@click.option("--days", default=30, help="Days of data to simulate/analyze")
+@click.option("--zscore", default=2.0, type=float, help="Z-score threshold (default 2.0)")
+@click.option("--output", "-o", default="table", type=click.Choice(["table", "json", "csv"]))
+@click.pass_context
+def anomaly(ctx: click.Context, monthly_cost: float, days: int, zscore: float, output: str) -> None:
+    """Detect cost anomalies using statistical analysis.
+
+    Analyzes daily cost patterns to find spikes and unusual spending.
+    """
+    from cloudcost.core.anomaly import AnomalyDetector
+
+    detector = AnomalyDetector(zscore_threshold=zscore)
+    data = detector.generate_daily_costs(
+        monthly_cost=monthly_cost,
+        days=days,
+        anomaly_days=[7, 15, 22],  # Inject some anomalies for demo
+    )
+    anomalies = detector.detect(data)
+
+    if not anomalies:
+        click.echo("No cost anomalies detected — spending is stable. 📊")
+        return
+
+    _output_results(anomalies, output)
+
+
 # ── Report ───────────────────────────────────────────────────────
 
 
