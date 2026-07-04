@@ -24,7 +24,28 @@ Cloud bills are complex and growing. AWS Cost Explorer and Alibaba Cloud Billing
 - ⚡ **Single command** — `pip install cloudcost && cloudcost aws scan`
 - 🔌 **Extensible** — plug in your own analyzers and recommenders
 
-## Quick Start
+### Terraform Cost Estimation
+
+```bash
+# Generate plan JSON
+terraform plan -out=tfplan
+terraform show -json tfplan > plan.json
+
+# Estimate costs
+cloudcost terraform plan.json --output summary
+# Total monthly: $847.23
+#   aws_instance.web:      $60.74/mo
+#   aws_instance.worker:   $420.48/mo
+#   ...
+```
+
+### Anomaly Detection
+
+```bash
+# Detect cost spikes with statistical analysis
+cloudcost anomaly --monthly-cost 5000
+# Flags days where cost deviates 2+ standard deviations from mean
+```
 
 ```bash
 pip install cloudcost
@@ -160,13 +181,15 @@ Areas we'd love help with:
 - [x] Reserved Instance / Savings Plan planner
 - [x] Multi-format reports (JSON, CSV, HTML, Slack)
 - [x] Plotly Dash web dashboard
+- [x] Cost anomaly detection (Z-score + moving average)
+- [x] Terraform plan cost estimation
+- [x] Docker support
 - [ ] GCP support
 - [ ] Azure support
 - [ ] Kubernetes cost allocation
-- [ ] Terraform plan cost estimation
-- [ ] Anomaly detection with ML
 - [ ] Teams / DingTalk notifications
 - [ ] Automated RI purchasing
+- [ ] GitHub Actions cost tracking
 
 ## License
 
