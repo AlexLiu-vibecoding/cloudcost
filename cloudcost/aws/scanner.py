@@ -256,27 +256,8 @@ class AWSScanner:
         return findings
 
     def _scan_elasticache(self, region: str) -> list[dict[str, Any]]:
-        findings = []
-        ec = self._session.client("elasticache", region_name=region)
+        """Scan ElastiCache clusters using the optimizer."""
+        from cloudcost.aws.elasticache_optimizer import ElastiCacheOptimizer
 
-        for cluster_type in [("redis", ec.describe_cache_clusters), ("memcached", ec.describe_cache_clusters)]:
-            try:
-                clusters = cluster_type[1](ShowCacheNodeInfo=True)
-                for cluster in clusters.get("CacheClusters", []):
-                    engine = cluster.get("Engine", "unknown")
-                    node_type = cluster.get("CacheNodeType", "")
-                    # Check for low-utilization clusters
-                    findings.append({
-                        "service": "elasticache",
-                        "region": region,
-                        "resource_id": cluster["CacheClusterId"],
-                        "finding": "elasticache_review",
-                        "severity": "low",
-                        "detail": f"ElastiCache {engine} cluster {cluster['CacheClusterId']} ({node_type}) — review utilization",
-                        "action": "Check CloudWatch metrics; consider downsizing",
-                        "estimated_monthly_savings_usd": 0,
-                    })
-            except Exception:
-                pass
-
-        return findings
+        opt = ElastiCacheOptimizer(session=self._session, regions=[region])
+        return opt.scan_region(region)
