@@ -1,0 +1,95 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.6.0",
+  "resource_changes": [
+    {
+      "address": "aws_instance.web",
+      "type": "aws_instance",
+      "name": "web",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "instance_type": "t3.medium",
+          "count": 2,
+          "ami": "ami-0c55b159cbfafe1f0"
+        }
+      }
+    },
+    {
+      "address": "aws_instance.worker",
+      "type": "aws_instance",
+      "name": "worker",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "instance_type": "m6i.xlarge",
+          "count": 3,
+          "ami": "ami-0c55b159cbfafe1f0"
+        }
+      }
+    },
+    {
+      "address": "aws_db_instance.main",
+      "type": "aws_db_instance",
+      "name": "main",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "instance_class": "db.t3.medium",
+          "allocated_storage": 100,
+          "engine": "postgres"
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket.assets",
+      "type": "aws_s3_bucket",
+      "name": "assets",
+      "change": {
+        "actions": ["create"],
+        "after": {}
+      }
+    },
+    {
+      "address": "aws_nat_gateway.main",
+      "type": "aws_nat_gateway",
+      "name": "main",
+      "change": {
+        "actions": ["create"],
+        "after": {}
+      }
+    },
+    {
+      "address": "aws_lb.public",
+      "type": "aws_lb",
+      "name": "public",
+      "change": {
+        "actions": ["create"],
+        "after": {}
+      }
+    },
+    {
+      "address": "alicloud_instance.app",
+      "type": "alicloud_instance",
+      "name": "app",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "instance_type": "ecs.g7.xlarge",
+          "count": 2
+        }
+      }
+    },
+    {
+      "address": "alicloud_db_instance.main",
+      "type": "alicloud_db_instance",
+      "name": "main",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "instance_type": "mysql.n4.xlarge"
+        }
+      }
+    }
+  ]
+}

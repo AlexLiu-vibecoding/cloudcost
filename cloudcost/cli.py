@@ -201,6 +201,35 @@ def dashboard(ctx: click.Context, host: str, port: int, debug: bool) -> None:
         click.echo("Dashboard requires: pip install cloudcost[dashboard]")
 
 
+# ── Terraform ──────────────────────────────────────────────────────
+
+
+@main.command()
+@click.argument("plan_file", type=click.Path(exists=True))
+@click.option("--output", "-o", default="table", type=click.Choice(["table", "json", "summary"]))
+@click.pass_context
+def terraform(ctx: click.Context, plan_file: str, output: str) -> None:
+    """Estimate costs from a Terraform plan JSON.
+
+    PLAN_FILE: Path to terraform plan JSON (generated via 'terraform show -json tfplan').
+    """
+    from cloudcost.core.terraform import TerraformEstimator
+
+    estimator = TerraformEstimator()
+    resources = estimator.estimate_plan(plan_file)
+
+    if output == "summary":
+        summary = estimator.summarize(resources)
+        click.echo(f"\n  Total monthly: ${summary['total_monthly_usd']:,.2f}")
+        click.echo(f"  Total annual:  ${summary['total_annual_usd']:,.2f}")
+        click.echo(f"  Resources:     {summary['resource_count']}")
+        click.echo(f"\n  By type:")
+        for rtype, cost in sorted(summary['by_type'].items()):
+            click.echo(f"    {rtype:30s} ${cost:,.2f}/mo")
+    else:
+        _output_results(resources, output)
+
+
 # ── Anomaly Detection ──────────────────────────────────────────────
 
 
