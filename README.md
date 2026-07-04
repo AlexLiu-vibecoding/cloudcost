@@ -2,39 +2,46 @@
 
 **Multi-cloud FinOps & cost optimization for AWS and Alibaba Cloud.**
 
-[![PyPI](https://img.shields.io/pypi/v/cloudcost)](https://pypi.org/project/cloudcost/)
+[![CI](https://github.com/AlexLiu-vibecoding/cloudcost/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexLiu-vibecoding/cloudcost/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/pypi/pyversions/cloudcost)](https://pypi.org/project/cloudcost/)
-[![License](https://img.shields.io/github/license/AlexLiu-vibecoding/cloudcost)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Stars](https://img.shields.io/github/stars/AlexLiu-vibecoding/cloudcost?style=social)](https://github.com/AlexLiu-vibecoding/cloudcost)
 
 > 💰 Find waste, right-size resources, plan reserved instances, and save up to **40%** on your cloud bills — across AWS and Alibaba Cloud in one tool.
 
+---
+
 ## Why CloudCost?
 
-Cloud bills are complex. AWS Cost Explorer and Alibaba Cloud Billing give you numbers but not *actionable* recommendations. CloudCost:
+Cloud bills are complex and growing. AWS Cost Explorer and Alibaba Cloud Billing give you numbers but **not actionable recommendations**. CloudCost bridges that gap:
 
 - 🔍 **Scans both clouds** for idle resources, oversized instances, unattached volumes, old snapshots
 - 📊 **Generates savings reports** with specific actions and dollar estimates
 - 🎯 **Recommends Reserved Instance / Savings Plan purchases** with break-even analysis
-- 📈 **Tracks cost trends** and detects anomalies (spikes, new services, region drift)
-- 🖥️ **Built-in web dashboard** to visualize your multi-cloud spend
-- ⚡ **Single binary** — `pip install cloudcost` and run
+- 📈 **Tracks cost trends** and detects anomalies
+- 🖥️ **Built-in web dashboard** visualizes your multi-cloud spend
+- ⚡ **Single command** — `pip install cloudcost && cloudcost aws scan`
+- 🔌 **Extensible** — plug in your own analyzers and recommenders
 
 ## Quick Start
 
 ```bash
 pip install cloudcost
+# Or with cloud SDKs:
+pip install cloudcost[aws]        # AWS support
+pip install cloudcost[aliyun]     # Alibaba Cloud support
+pip install cloudcost[dashboard]  # Web dashboard
 ```
 
 ### AWS
 
 ```bash
-export AWS_ACCESS_KEY_ID=...
-export AWS_SECRET_ACCESS_KEY=...
-
-# Full scan
+export AWS_ACCESS_KEY_ID=ak_***
+export AWS_SECRET_ACCESS_KEY=***# Full cost scan
 cloudcost aws scan
 
-# EC2 right-sizing recommendations
+# EC2 right-sizing
 cloudcost aws ec2 --right-size
 
 # Reserved Instance planner
@@ -42,29 +49,30 @@ cloudcost aws ri-plan --term 1year --payment partial-upfront
 
 # S3 storage analysis
 cloudcost aws s3 --analyze
+
+# Generate HTML report
+cloudcost report --format html --output savings.html
 ```
 
 ### Alibaba Cloud
 
 ```bash
-export ALIBABA_CLOUD_ACCESS_KEY_ID=...
-export ALIBABA_CLOUD_ACCESS_KEY_SECRET=...
-
-# Full scan
+export ALIBABA_CLOUD_ACCESS_KEY_ID=***
+export ALIBABA_CLOUD_ACCESS_KEY_SECRET=***# Full scan
 cloudcost aliyun scan
 
-# ECS optimization
+# ECS right-sizing
 cloudcost aliyun ecs --right-size
 
-# OSS storage tiering
-cloudcost aliyun oss --lifecycle-policy
+# OSS lifecycle planning
+cloudcost aliyun oss
 ```
 
 ### Multi-cloud dashboard
 
 ```bash
 cloudcost dashboard
-# Opens http://localhost:8050 — see all clouds in one view
+# Opens http://localhost:8050 — see all your clouds in one view
 ```
 
 ## What It Finds
@@ -74,8 +82,8 @@ cloudcost dashboard
 | **Idle Resources** | EC2/ECS <1% CPU for 7+ days, unattached EIPs, unused ALB/NLB | 15-30% |
 | **Right-sizing** | Instances with <20% utilization → smaller family | 20-50% |
 | **Storage** | S3/OSS without lifecycle policies, old snapshots, unattached EBS | 10-40% |
-| **RDS** | Over-provisioned databases, missing read replicas | 15-35% |
-| **Reserved/Package** | RI/SCU coverage gaps, break-even calculator | 30-60% |
+| **RDS** | Over-provisioned databases, missing read replicas, Multi-AZ waste | 15-35% |
+| **Reserved Instances** | RI/SCU coverage gaps, break-even calculator | 30-60% |
 | **Networking** | Idle NAT gateways, unused elastic IPs, excessive data transfer | 5-15% |
 
 ## Architecture
@@ -83,6 +91,7 @@ cloudcost dashboard
 ```
 ┌─────────────────────────────────────────────┐
 │                  CloudCost CLI               │
+│            (Click + Rich tables)             │
 ├─────────────────────────────────────────────┤
 │  ┌──────────┐  ┌───────────┐  ┌──────────┐  │
 │  │ AWS      │  │ Alibaba   │  │ Dashboard│  │
@@ -90,7 +99,7 @@ cloudcost dashboard
 │  └────┬─────┘  └─────┬─────┘  └────┬─────┘  │
 │       │              │             │         │
 │  ┌────┴──────────────┴─────────────┴────┐    │
-│  │         Recommendation Engine        │    │
+│  │    Recommendation Engine + Reporter  │    │
 │  └─────────────────┬────────────────────┘    │
 │                    │                         │
 │  ┌─────────────────┴────────────────────┐    │
@@ -99,29 +108,65 @@ cloudcost dashboard
 └─────────────────────────────────────────────┘
 ```
 
-## Reports
+## Report Formats
 
 ```bash
 # JSON (machine-readable)
 cloudcost report --format json --output savings.json
 
-# CSV for Excel
+# CSV for spreadsheet analysis
 cloudcost report --format csv --output savings.csv
 
-# HTML with charts
+# Interactive HTML with charts
 cloudcost report --format html --output report.html
 
 # Slack notification
-cloudcost report --format slack --webhook https://hooks.slack.com/...
+cloudcost report --format slack --slack-webhook https://hooks.slack.com/...
 ```
 
 ## Supported Services
 
-### AWS
-EC2, RDS, S3, EBS, Elastic IP, NAT Gateway, ALB/NLB, Lambda, ElastiCache, Redshift, Route53
+| AWS | Alibaba Cloud |
+|-----|---------------|
+| EC2, RDS, S3 | ECS, RDS, OSS |
+| EBS, Elastic IP, NAT Gateway | EIP, NAT Gateway, SLB |
+| ALB/NLB, Lambda | Redis, MongoDB, PolarDB |
+| ElastiCache, Redshift, Route53 | CDN |
 
-### Alibaba Cloud
-ECS, RDS, OSS, EIP, NAT Gateway, SLB, Redis, MongoDB, PolarDB, CDN
+## Development
+
+```bash
+git clone https://github.com/AlexLiu-vibecoding/cloudcost.git
+cd cloudcost
+pip install -e ".[dev]"
+pytest tests/ -v
+```
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+Areas we'd love help with:
+- ☁️ GCP / Azure support
+- 📊 Kubernetes cost allocation
+- 🔔 Email / Teams / DingTalk notifications
+- 🧠 ML-based anomaly detection
+- 🌐 Terraform cost estimation
+
+## Roadmap
+
+- [x] AWS Scanner (EC2, RDS, S3, EBS, EIP, NAT, ELB, Lambda, ElastiCache)
+- [x] Alibaba Cloud Scanner (ECS, RDS, OSS, EIP, NAT, SLB, Redis)
+- [x] Reserved Instance / Savings Plan planner
+- [x] Multi-format reports (JSON, CSV, HTML, Slack)
+- [x] Plotly Dash web dashboard
+- [ ] GCP support
+- [ ] Azure support
+- [ ] Kubernetes cost allocation
+- [ ] Terraform plan cost estimation
+- [ ] Anomaly detection with ML
+- [ ] Teams / DingTalk notifications
+- [ ] Automated RI purchasing
 
 ## License
 
@@ -129,4 +174,4 @@ MIT — see [LICENSE](LICENSE)
 
 ---
 
-⭐ **Star this repo** if you're tired of surprise cloud bills!
+⭐ **Star this repo** if you're tired of surprise cloud bills! Every star helps build better FinOps tooling for everyone.
